@@ -10,6 +10,7 @@ Simple TypeScript STOMP over Websocket library.
 * Supports native websocket transport
 * Supports SockJS emulated websocket transport
 
+For Angular 5 integration, have a look at [@elderbyte/ngx-stomp](https://github.com/ElderByte-/ngx-stomp)
 
 ## Consuming your library
 

@@ -1,0 +1,28 @@
+{
+  "name": "@elderbyte/ts-stomp",
+  "version": "1.0.0",
+  "description": "Angular Stomp library.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ElderByte-/ts-stomp"
+  },
+  "author": {
+    "name": "ElderByte",
+    "email": "info@elderbyte.com"
+  },
+  "keywords": [
+    "typescript",
+    "websocket",
+    "angular",
+    "stomp"
+  ],
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/ElderByte-/ts-stomp/issues"
+  },
+  "main": "ts-stomp.umd.js",
+  "module": "ts-stomp.es5.js",
+  "typings": "types/ts-stomp.d.ts",
+  "peerDependencies": {
+  }
+}

@@ -1,5 +1,5 @@
 [![CI Status](https://travis-ci.org/ElderByte-/ts-stomp.svg?branch=master)](https://travis-ci.org/ElderByte-/ts-stomp)
-[![npm version](https://badge.fury.io/js/%40elderbyte%2Fts-stomp.svg)](https://badge.fury.io/js/%40elderbyte%2Fts-stomp)
+[![npm version](https://badge.fury.io/js/%40elderbyte%2Fts-stomp.svg)](https://www.npmjs.com/package/@elderbyte/ts-stomp)
 
 # TypeScript STOMP
 

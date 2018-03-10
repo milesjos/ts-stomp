@@ -78,7 +78,6 @@
     "tslint-config-standard": "^7.0.0",
     "typedoc": "^0.9.0",
     "typescript": "~2.6.2",
-    "zone.js": "^0.8.20",
     "sockjs-client": "^1.1.4"
   }
 }

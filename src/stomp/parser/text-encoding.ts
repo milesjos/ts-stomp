@@ -1,15 +1,20 @@
 
+// http://www.onicos.com/staff/iz/amuse/javascript/expert/utf.txt
+
+/**
+ * utf.js - UTF-8 <=> UTF-16 convertion
+ *
+ * Copyright (C) 1999 Masanao Izumo <iz@onicos.co.jp>
+ * Version: 1.0
+ * LastModified: Dec 25 1999
+ * This library is free.  You can redistribute it and/or modify it.
+ * ----
+ * Modifications: Converted JS source into TypeScript
+ */
 export class TextEncoding {
 
-
-    // http://www.onicos.com/staff/iz/amuse/javascript/expert/utf.txt
-
-    /** utf.js - UTF-8 <=> UTF-16 convertion
-     *
-     * Copyright (C) 1999 Masanao Izumo <iz@onicos.co.jp>
-     * Version: 1.0
-     * LastModified: Dec 25 1999
-     * This library is free.  You can redistribute it and/or modify it.
+    /**
+     * Decodes a byte array into a string using utf8 encoding
      */
     public decodeUtf8(array: Uint8Array): string {
         let out, i, len, c;
@@ -42,16 +47,6 @@ export class TextEncoding {
         }
 
         return out;
-    }
-
-    /**
-     * Decodes an binary array into a unicode string
-     * @deprecated Use decode!
-     */
-    public decodeLegacy(array: Uint8Array): string {
-        const stringArray: string[] = [];
-        array.forEach(val => stringArray.push(String.fromCharCode(val)));
-        return stringArray.join('');
     }
 
     /**

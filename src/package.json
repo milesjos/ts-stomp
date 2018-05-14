@@ -1,7 +1,7 @@
 {
   "name": "@elderbyte/ts-stomp",
-  "version": "1.0.2",
-  "description": "Angular Stomp library.",
+  "version": "2.0.0",
+  "description": "TypeScript Stomp library.",
   "repository": {
     "type": "git",
     "url": "https://github.com/ElderByte-/ts-stomp"
@@ -30,6 +30,6 @@
 
   "peerDependencies": {
     "@elderbyte/ts-logger": "^0.1.0",
-    "rxjs": "^5.5.2"
+    "rxjs": "^6.1.0"
   }
 }

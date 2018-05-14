@@ -1,24 +1,23 @@
 
 
 import {StompClient} from './stomp-client';
-import {Observable} from 'rxjs/Observable';
-import {ReplaySubject} from 'rxjs/ReplaySubject';
 import {StompClientBuilder} from './stomp-client-builder';
 import {LoggerFactory} from '@elderbyte/ts-logger';
+import {Observable, ReplaySubject} from 'rxjs';
 
 
-export class StompConfiguration {
+export interface StompConfiguration {
 
     /**
      * The websocket / sockJS endpoint
      */
-    public endpointUrl: string;
+    endpointUrl: string;
 
     /**
      * Use SockJS as transport handler. (default false)
      * If not used, standard browser websocket connection is used.
      */
-    public withSockJs?: boolean;
+    withSockJs?: boolean;
 }
 
 
@@ -33,10 +32,10 @@ export class StompService {
      *                                                                         *
      **************************************************************************/
 
-    private logger = LoggerFactory.getLogger('StompService');
+    private readonly logger = LoggerFactory.getLogger('StompService');
 
-    private _client: StompClient;
-    private _onConnectedSubject = new ReplaySubject<StompClient>(1);
+    private readonly _client: StompClient;
+    private readonly _onConnectedSubject = new ReplaySubject<StompClient>(1);
 
     /***************************************************************************
      *                                                                         *
@@ -46,7 +45,7 @@ export class StompService {
 
     constructor(
         private configuration: StompConfiguration) {
-        this.connectStomp();
+        this._client = this.connectStomp();
     }
 
     /***************************************************************************
@@ -70,26 +69,28 @@ export class StompService {
      *                                                                         *
      **************************************************************************/
 
-    private connectStomp(): void {
+    private connectStomp(): StompClient {
 
-        this._client = this.buildStompClient();
+        const client = this.buildStompClient();
 
-        this._client.errors.subscribe(m => {
+        client.errors.subscribe(m => {
             this.logger.warn('STOMP: Got ERROR!', m);
         }, err => {
             this.logger.error('Error while attempting to get ERROR!', err);
         });
 
-        this._client.onConnect.subscribe(con => {
+        client.onConnect.subscribe(con => {
             this.logger.info('STOMP: Got connection. Ready for subscriptions.', con);
-            this._onConnectedSubject.next(this._client);
+            this._onConnectedSubject.next(client);
         }, err => {
             this.logger.error('Error while attempting to connect!', err);
             this._onConnectedSubject.error(err);
         });
 
         this.logger.info('Attempting to connect to STOMP ...');
-        this._client.connect();
+        client.connect();
+
+        return client;
     }
 
 

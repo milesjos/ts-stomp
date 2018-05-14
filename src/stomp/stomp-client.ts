@@ -4,8 +4,6 @@
 
 import {BYTE, StompFrameDeserializer} from './parser/stomp-frame-deserializer';
 import {StompFrameSerializer} from './parser/stomp-frame-serializer';
-import {Subject} from 'rxjs/Subject';
-import {Observable} from 'rxjs/Observable';
 import {StompFrame} from './frames/stomp-frame';
 import {StompFrameMessage} from './frames/stomp-frame-message';
 import {StompFrameError} from './frames/stomp-frame-error';
@@ -13,6 +11,7 @@ import {MessageSubscription} from './message-subscription';
 import {StompCommand} from './stomp-command';
 import {StompConfig} from './stomp-config';
 import {LoggerFactory} from '@elderbyte/ts-logger';
+import {Observable, Subject} from 'rxjs';
 
 
 export class StompClient {

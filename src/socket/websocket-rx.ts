@@ -1,8 +1,5 @@
-
-import {Subject} from 'rxjs/Subject';
-import {Observable} from 'rxjs/Observable';
-import {Observer} from 'rxjs/Observer';
 import {LoggerFactory} from '@elderbyte/ts-logger';
+import {Observable, Observer, Subject} from 'rxjs';
 
 /**
  * A adapter around a websocket providing rx observable api.

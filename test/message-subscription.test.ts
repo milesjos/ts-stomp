@@ -1,7 +1,7 @@
 
 import {MessageSubscription} from '../src/stomp';
 import {StompFrameMessage} from '../src/stomp/frames/stomp-frame-message';
-import {Subject} from 'rxjs/Subject';
+import {Subject} from 'rxjs';
 
 describe('MessageSubscription Test', () => {
 

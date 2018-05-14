@@ -9,7 +9,7 @@
     "curly": true,
     "eofline": true,
     "forin": true,
-    "import-blacklist": [true, "rxjs"],
+    "import-blacklist": [true, "rxjs/index", "rxjs/internal/operators"],
     "import-spacing": true,
     "indent": [
       true,

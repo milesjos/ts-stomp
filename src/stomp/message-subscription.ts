@@ -1,6 +1,7 @@
-import {Observable} from 'rxjs/Observable';
-import 'rxjs/add/operator/filter';
 import {StompFrameMessage} from './frames/stomp-frame-message';
+import {Observable} from 'rxjs';
+import {filter} from 'rxjs/operators';
+
 
 
 export class MessageSubscription {
@@ -38,7 +39,8 @@ export class MessageSubscription {
      * Gets an observable stream of all messages of this subscription.
      */
     public get messages(): Observable<StompFrameMessage> {
-        return this._messages
-            .filter(m => m.subscriptionId === this.subscriptionId);
+        return this._messages.pipe(
+            filter(m => m.subscriptionId === this.subscriptionId)
+        );
     }
 }

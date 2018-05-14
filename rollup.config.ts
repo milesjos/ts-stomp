@@ -3,6 +3,7 @@ import sourceMaps from 'rollup-plugin-sourcemaps'
 import camelCase from 'lodash.camelcase'
 import typescript from 'rollup-plugin-typescript2'
 
+
 const pkg = require('./package.json');
 
 const libraryName = 'ts-stomp';

@@ -1,6 +1,6 @@
 {
   "name": "@elderbyte/ts-stomp",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "TypeScript Stomp library.",
   "repository": {
     "type": "git",
@@ -23,10 +23,6 @@
   "main": "ts-stomp.umd.js",
   "module": "ts-stomp.es5.js",
   "typings": "types/ts-stomp.d.ts",
-
-  "dependencies": {
-    "sockjs-client": "^1.1.4"
-  },
 
   "peerDependencies": {
     "@elderbyte/ts-logger": "^0.1.0",

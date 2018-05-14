@@ -1,5 +1,4 @@
 
-import * as SockJS from 'sockjs-client';
 import {StompClient} from './stomp-client';
 import {LoggerFactory} from '@elderbyte/ts-logger';
 
@@ -98,10 +97,14 @@ export class StompClientBuilder {
 
     /**
      * Builds a Stomp client using SockJs as transport
+     *
      */
     private buildSockJS(url: string): WebSocket {
-        const sockJs = new SockJS(url);
-        return sockJs as WebSocket;
+        // const sockJs = new SockJS(url);
+        // return sockJs as WebSocket;
+
+        // Fallback to the raw websocket url
+        return this.buildNativeWebSocket(url + '/websocket');
     }
 
     /**

@@ -1,6 +1,7 @@
 
 import {StompClient} from './stomp-client';
 import {LoggerFactory} from '@elderbyte/ts-logger';
+import {WebsocketUrlUtil} from '../socket/websocket-url-util';
 
 /**
  * Provides the ability to build StompClients
@@ -99,12 +100,16 @@ export class StompClientBuilder {
      * Builds a Stomp client using SockJs as transport
      *
      */
-    private buildSockJS(url: string): WebSocket {
-        // const sockJs = new SockJS(url);
+    private buildSockJS(sockJsUrl: string): WebSocket {
+        // const sockJs = new SockJS(sockJsUrl);
         // return sockJs as WebSocket;
 
+        const nativeUrl = WebsocketUrlUtil.fromSockJSToAbsolute(sockJsUrl);
+
+        this.logger.debug('Transformed SockJS url to native websocket: ' + nativeUrl);
+
         // Fallback to the raw websocket url
-        return this.buildNativeWebSocket(url + '/websocket');
+        return this.buildNativeWebSocket(nativeUrl);
     }
 
     /**
@@ -112,7 +117,8 @@ export class StompClientBuilder {
      * @param url
      */
     private buildNativeWebSocket(url: string): WebSocket {
-        return new WebSocket(url, this._protocols);
+        const wsUrl = WebsocketUrlUtil.fromWsUrlToAbsolute(url);
+        return new WebSocket(wsUrl, this._protocols);
     }
 
     /**

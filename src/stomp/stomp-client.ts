@@ -32,16 +32,10 @@ export class StompClient {
     private readonly frameSerializer: StompFrameSerializer;
     private readonly frameDeserializer: StompFrameDeserializer;
 
-    private counter = 0;
-    private connected = false;
-    private serverActivity = 0;
-    private pinger: any;
-    private ponger: any;
-
-    private _connectSubject = new Subject<StompFrame>();
-    private receiptSubject = new Subject<StompFrame>();
-    private messageSubject = new Subject<StompFrameMessage>();
-    private errorSubject = new Subject<StompFrameError>();
+    private readonly _connectSubject = new Subject<StompFrame>();
+    private readonly receiptSubject = new Subject<StompFrame>();
+    private readonly messageSubject = new Subject<StompFrameMessage>();
+    private readonly errorSubject = new Subject<StompFrameError>();
 
 
     /**
@@ -49,9 +43,18 @@ export class StompClient {
      * is bigger than this value, the STOMP frame will be sent using multiple
      * WebSocket frames (default is 16KiB)
      */
-    private maxWebSocketFrameSize = 16 * 1024;
-    private subscriptions = new Map<string, MessageSubscription>();
+    private readonly maxWebSocketFrameSize = 16 * 1024;
 
+    /**
+     * Holds all client subscriptions by topic key.
+     */
+    private readonly subscriptions = new Map<string, MessageSubscription>();
+
+    private counter = 0;
+    private connected = false;
+    private serverActivity = 0;
+    private pinger: any;
+    private ponger: any;
 
     /***************************************************************************
      *                                                                         *
@@ -148,7 +151,7 @@ export class StompClient {
     public disconnect(disconnectCallback: () => {}, headers: Map<string, string>): void {
         this.transmit(StompCommand.DISCONNECT, headers);
         this.ws.onclose = null as any;
-        this.ws.close();
+        this.closeWs('disconnect() invoked by user code.');
         this.cleanup();
         disconnectCallback();
     }
@@ -205,7 +208,7 @@ export class StompClient {
      * [ABORT Frame](http://stomp.github.com/stomp-specification-1.1.html#ABORT)
      * @param transaction
      */
-    public abort(transaction: string) {
+    public abort(transaction: string): void {
 
         const headers = new Map<string, string>();
         headers.set('transaction', transaction);
@@ -217,7 +220,7 @@ export class StompClient {
      * [BEGIN Frame](http://stomp.github.com/stomp-specification-1.1.html#BEGIN)
      * @param transaction
      */
-    public begin(transaction?: string) {
+    public begin(transaction?: string): any {
         const txid = transaction || `tx-${this.counter++}`;
 
         const headers = new Map<string, string>();
@@ -240,7 +243,7 @@ export class StompClient {
      * [COMMIT Frame](http://stomp.github.com/stomp-specification-1.1.html#COMMIT)
      * @param transaction
      */
-    public commit(transaction: string) {
+    public commit(transaction: string): void {
         const headers = new Map<string, string>();
         headers.set('transaction', transaction);
 
@@ -252,7 +255,7 @@ export class StompClient {
      * @param id
      * @param transaction
      */
-    public ack(id: string, transaction?: string) {
+    public ack(id: string, transaction?: string): void {
         const headers = new Map<string, string>();
         headers.set('id', id);
         if (transaction) {
@@ -266,7 +269,7 @@ export class StompClient {
      * @param id
      * @param transaction
      */
-    public nack(id: string, transaction?: string) {
+    public nack(id: string, transaction?: string): void {
         const headers = new Map<string, string>();
         headers.set('id', id);
         if (transaction) {
@@ -282,14 +285,18 @@ export class StompClient {
      *                                                                         *
      **************************************************************************/
 
+    private closeWs(reason: string): void {
+        this.logger.warn('Closing websocket beacuse: ' + reason);
+        this.ws.close();
+    }
 
-    private cleanup() {
+    private cleanup(): void {
         this.connected = false;
         clearInterval(this.pinger);
         clearInterval(this.ponger);
     }
 
-    private handleFrame(frame: StompFrame) {
+    private handleFrame(frame: StompFrame): void {
         switch (frame.command) {
             // [CONNECTED Frame](http://stomp.github.com/stomp-specification-1.1.html#CONNECTED_Frame)
             case StompCommand.CONNECTED:
@@ -315,7 +322,7 @@ export class StompClient {
         }
     }
 
-    private onError(error: StompFrameError) {
+    private onError(error: StompFrameError): void {
         this.errorSubject.next(error);
     }
 
@@ -331,40 +338,54 @@ export class StompClient {
         this.ws.send(out);
     }
 
-    private setupHeartbeat(frame: StompFrame) {
+    private setupHeartbeat(frame: StompFrame): void {
 
-        const version = frame.getHeader('version');
+        const serverHb = this.parseHeartBeatHeader(frame);
 
+        this.logger.info('Setting up Heart-beat according to header: ', serverHb);
+
+        if (this.heartbeat.outgoing > 0 || serverHb.outgoing > 0) {
+            const ttl = Math.max(this.heartbeat.outgoing, serverHb.outgoing);
+
+            this.logger.info(`Configuring heart-beat to send all ${ttl}ms`);
+
+            this.pinger = setInterval(() => {
+                this.sendHeartBeat();
+            }, ttl);
+        }
+
+        if (serverHb.incoming > 0) {
+            const ttl = Math.max(this.heartbeat.incoming, serverHb.incoming);
+
+            this.logger.info(`Configuring expected server heart-beat every ${ttl}ms`);
+
+            this.ponger = setInterval(() => {
+                const delta = Date.now() - this.serverActivity;
+                if (delta > ttl * 2) {
+                    this.logger.warn(`Did not receive server activity for the last ${delta}ms.`);
+                    this.closeWs('Server failed to deliver heart-beats. Assuming connection is dead.');
+                }
+            }, ttl);
+        }
+    }
+
+    private parseHeartBeatHeader(frame: StompFrame): HeartBeatConfig {
         // heart-beat header received from the server looks like:
         // heart-beat: sx, sy
         const heartBeatHeader = frame.getHeader('heart-beat');
 
-        this.logger.debug('Version ' + version + ' setting up Heart-beat according to header: ' + heartBeatHeader);
-
         if (heartBeatHeader) {
-            const heartBeat = heartBeatHeader.split(',').map(parseInt);
-            const serverIncoming = heartBeat[0];
-            const serverOutgoing = heartBeat[1];
 
-            if (this.heartbeat.outgoing > 0 && serverOutgoing > 0) {
-                const ttl = Math.max(this.heartbeat.outgoing, serverOutgoing);
-                this.logger.info(`Configuring heart-beat to send all ${ttl}ms`);
-
-                this.pinger = setInterval(() => {
-                    this.sendHeartBeat();
-                }, ttl);
+            const heartBeat = heartBeatHeader.split(',')
+                                             .map(x => parseInt(x, 10));
+            return {
+                incoming: heartBeat[0],
+                outgoing: heartBeat[1]
             }
-
-            if (this.heartbeat.incoming > 0 && serverIncoming > 0) {
-                const ttl = Math.max(this.heartbeat.incoming, serverIncoming);
-                this.logger.info(`Configuring expected server heart-beat every ${ttl}ms`);
-                this.ponger = setInterval(() => {
-                    const delta = Date.now() - this.serverActivity;
-                    if (delta > ttl * 2) {
-                        this.logger.warn(`Did not receive server activity for the last ${delta}ms. Closing Websocket!`);
-                        this.ws.close();
-                    }
-                }, ttl);
+        } else {
+            return {
+                incoming: 0,
+                outgoing: 0
             }
         }
     }

@@ -1,6 +1,6 @@
 {
   "name": "@elderbyte/ts-stomp",
-  "version": "3.0.0-beta",
+  "version": "3.0.0-beta3",
   "description": "TypeScript Stomp library.",
   "repository": {
     "type": "git",

@@ -1,5 +1,5 @@
 
-import {StompClient} from './stomp-client';
+import {HeartBeatConfig, StompClient} from './stomp-client';
 import {LoggerFactory} from '@elderbyte/ts-logger';
 import {WebsocketUrlUtil} from '../socket/websocket-url-util';
 
@@ -19,7 +19,11 @@ export class StompClientBuilder {
 
     private readonly _url: string;
     private _enableSockJS = false;
-    private _protocols: string[] = ['v10.stomp', 'v11.stomp'];
+    private _protocols: string[] = ['v11.stomp', 'v12.stomp'];
+    private _heartBeatConfig: HeartBeatConfig = {
+        outgoing: 10000,
+        incoming: 10000
+    };
 
 
     /***************************************************************************
@@ -65,10 +69,18 @@ export class StompClientBuilder {
     }
 
     /**
-     * Define the support protocols
+     * Define the supported protocols
      */
     public protocols(protocols: string[]): this {
         this._protocols = protocols;
+        return this;
+    }
+
+    /**
+     * Set the heart-beat config
+     */
+    public heartBeat(config: HeartBeatConfig): this {
+        this._heartBeatConfig = config;
         return this;
     }
 
@@ -126,6 +138,6 @@ export class StompClientBuilder {
      * @param ws The websocket connection
      */
     private buildClientWith(ws: WebSocket): StompClient {
-        return new StompClient(ws);
+        return new StompClient(ws, this._heartBeatConfig);
     }
 }

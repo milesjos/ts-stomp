@@ -14,9 +14,12 @@ import {LoggerFactory} from '@elderbyte/ts-logger';
 import {Observable, Subject} from 'rxjs';
 
 
-export class StompClient {
+export class HeartBeatConfig {
+    public outgoing = 0;
+    public incoming = 0;
+}
 
-    public static readonly V1_0 = '1.0';
+export class StompClient {
 
     /***************************************************************************
      *                                                                         *
@@ -31,10 +34,6 @@ export class StompClient {
 
     private counter = 0;
     private connected = false;
-    private heartbeat = {
-        outgoing: 10000,
-        incoming: 10000
-    };
     private serverActivity = 0;
     private pinger: any;
     private ponger: any;
@@ -64,7 +63,8 @@ export class StompClient {
      * Creates a new STOMP Client using the given websocket
      */
     constructor(
-        private ws: WebSocket) {
+        private readonly ws: WebSocket,
+        private readonly heartbeat: HeartBeatConfig) {
 
         this.ws.binaryType = 'arraybuffer';
         this.frameSerializer = new StompFrameSerializer();
@@ -121,7 +121,7 @@ export class StompClient {
         };
 
         this.ws.onclose = () => {
-            const message = `WS: Lost connection to ${this.ws.url}`;
+            const message = `Lost websocket connection to ${this.ws.url}`;
             this.logger.warn(message);
             this.cleanup();
 
@@ -134,8 +134,7 @@ export class StompClient {
             const headers = new Map<string, string>();
             headers.set('accept-version', '1.2');
             headers.set('host', 'localhost');
-            // headers.set('accept-version', Stomp.supportedVersions);
-            // headers.set('heart-beat', [this.heartbeat.outgoing, this.heartbeat.incoming].join(','));
+            headers.set('heart-beat', [this.heartbeat.outgoing, this.heartbeat.incoming].join(','));
 
             this.transmit(StompCommand.CONNECT, headers);
         };
@@ -294,7 +293,7 @@ export class StompClient {
         switch (frame.command) {
             // [CONNECTED Frame](http://stomp.github.com/stomp-specification-1.1.html#CONNECTED_Frame)
             case StompCommand.CONNECTED:
-                this.logger.info(`WS: connected to server `, frame.getHeader('server'));
+                this.logger.info(`STOMP server connected. Frame:`, frame);
                 this.connected = true;
                 this.setupHeartbeat(frame);
                 this._connectSubject.next(frame);
@@ -309,10 +308,10 @@ export class StompClient {
                 break;
             case StompCommand.ERROR:
                 this.onError(new StompFrameError(null, frame));
-                this.logger.warn('WS: error received: ', frame);
+                this.logger.warn('STOMP: error received: ', frame);
                 break;
             default:
-                throw new Error(`not supported STOMP command '${frame.command}'`);
+                throw new Error(`Not supported STOMP command '${frame.command}'`);
         }
     }
 
@@ -336,13 +335,11 @@ export class StompClient {
 
         const version = frame.getHeader('version');
 
-        if (!version || version === StompClient.V1_0) {
-            return;
-        }
-
         // heart-beat header received from the server looks like:
         // heart-beat: sx, sy
         const heartBeatHeader = frame.getHeader('heart-beat');
+
+        this.logger.debug('Version ' + version + ' setting up Heart-beat according to header: ' + heartBeatHeader);
 
         if (heartBeatHeader) {
             const heartBeat = heartBeatHeader.split(',').map(parseInt);
@@ -351,7 +348,7 @@ export class StompClient {
 
             if (this.heartbeat.outgoing > 0 && serverOutgoing > 0) {
                 const ttl = Math.max(this.heartbeat.outgoing, serverOutgoing);
-                this.logger.info(`WS: Check PING every ${ttl}ms`);
+                this.logger.info(`Configuring heart-beat to send all ${ttl}ms`);
 
                 this.pinger = setInterval(() => {
                     this.sendHeartBeat();
@@ -360,11 +357,11 @@ export class StompClient {
 
             if (this.heartbeat.incoming > 0 && serverIncoming > 0) {
                 const ttl = Math.max(this.heartbeat.incoming, serverIncoming);
-                this.logger.info(`WS: Check PONG every ${ttl}ms`);
+                this.logger.info(`Configuring expected server heart-beat every ${ttl}ms`);
                 this.ponger = setInterval(() => {
                     const delta = Date.now() - this.serverActivity;
                     if (delta > ttl * 2) {
-                        this.logger.warn(`WS: Did not receive server activity for the last ${delta}ms`);
+                        this.logger.warn(`Did not receive server activity for the last ${delta}ms. Closing Websocket!`);
                         this.ws.close();
                     }
                 }, ttl);

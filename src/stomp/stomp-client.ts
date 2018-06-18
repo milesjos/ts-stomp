@@ -131,13 +131,13 @@ export class StompClient {
         this.ws.onopen = () => {
             this.logger.info('WebSocket opened. Attempting to connect to STOMP now...');
 
-            let headers = new Map<string, string>();
+            const headers = new Map<string, string>();
             headers.set('accept-version', '1.2');
             headers.set('host', 'localhost');
             // headers.set('accept-version', Stomp.supportedVersions);
             // headers.set('heart-beat', [this.heartbeat.outgoing, this.heartbeat.incoming].join(','));
             if (config && config.headers) {
-              headers = new Map([...Array.from(config.headers.entries()), ...Array.from(headers.entries())]);
+              config.headers.forEach((v, k) => headers.set(k, v));
             }
 
             this.transmit(StompCommand.CONNECT, headers);
